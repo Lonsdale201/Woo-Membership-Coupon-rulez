@@ -14,24 +14,26 @@ class HW_Coupon_Restriction {
         if (!is_user_logged_in()) {
             return $is_valid;
         }
-
+    
         $user_memberships = wc_memberships_get_user_memberships();
         if (empty($user_memberships)) {
             return $is_valid;
         }
-
+    
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product = $cart_item['data'];
             if ($this->product_has_membership_discount($product, $user_memberships)) {
                 if ('yes' === get_post_meta($coupon->get_id(), 'disable_coupon_for_memberships', true)) {
-                    throw new Exception(__('A kedvezmények nem halmozhatóak.', 'woocommerce'));
+                    return false; 
                 }
                 break;
             }
         }
-
+    
         return $is_valid;
     }
+    
+    
 
     private function product_has_membership_discount($product, $user_memberships) {
         foreach ($user_memberships as $membership) {
