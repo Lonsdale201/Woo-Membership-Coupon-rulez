@@ -1,39 +1,82 @@
 <?php
 /**
- * Plugin Name: HelloWP! | Woo Membership Coupon rulez
- * Description: A simple addition to coupons that allows woo membership users to optionally force to not use coupons if the membership provides a discount.
- * Version: 1.0-beta
+ * Plugin Name: HelloWP! | Woo Membership Coupon Rules
+ * Plugin URI: https://github.com/Lonsdale201/Woo-Membership-Coupon-rulez
+ * Description: A simple addition to coupons that allows WooCommerce membership users to optionally force to not use coupons if the membership provides a discount, or not have a selected mmship for the user based on the settings.
+ * Version: 2.0
  * Author: Soczó Kristóf
  * Author URI: https://hellowp.io/hu/
  */
 
- if (!defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
+final class My_WooCommerce_Extension {
+    const MINIMUM_WOOCOMMERCE_VERSION = '7.0';
 
- class My_WooCommerce_Extension {
-    public function __construct() {
-        add_action('woocommerce_coupon_options', array($this, 'add_coupon_meta_field'));
-        add_action('woocommerce_coupon_options_save', array($this, 'save_coupon_meta_field'));
+    private static $_instance = null;
+
+    public static function instance() {
+        if (is_null(self::$_instance)) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
     }
 
-    public function add_coupon_meta_field() {
-        woocommerce_wp_checkbox(array(
-            'id' => 'disable_coupon_for_memberships',
-            'label' => __('Disable coupon for Woo Memberships', 'woocommerce'),
-            'description' => __('Your customers who have a membership and want to apply the coupon to a product that has a Woo Membership discount will not be allowed to use the coupon', 'woocommerce')
-        ));
+    private function __construct() {
+        add_action('plugins_loaded', [$this, 'init'], 20); 
     }
 
-    public function save_coupon_meta_field($post_id) {
-        $checkbox = isset($_POST['disable_coupon_for_memberships']) ? 'yes' : 'no';
-        update_post_meta($post_id, 'disable_coupon_for_memberships', $checkbox);
+    public function init() {
+        if (!$this->check_dependencies()) {
+            return;
+        }
+
+        include_once plugin_dir_path(__FILE__) . 'includes/class-hw-coupon-restriction.php';
+        if (class_exists('HW_Coupon_Restriction')) {
+            new HW_Coupon_Restriction();
+        }
+        include_once plugin_dir_path(__FILE__) . 'includes/class-hw-coupon-admin.php';
     }
+
+    private function check_dependencies() {
+        if (!class_exists('WooCommerce')) {
+            add_action('admin_notices', [$this, 'admin_notice_woocommerce_missing']);
+            return false;
+        }
+
+        if (version_compare(WC_VERSION, self::MINIMUM_WOOCOMMERCE_VERSION, '<')) {
+            add_action('admin_notices', [$this, 'admin_notice_minimum_woocommerce_version']);
+            return false;
+        }
+
+        if (!class_exists('WC_Memberships')) {
+            add_action('admin_notices', [$this, 'admin_notice_wc_memberships_missing']);
+            return false;
+        }
+
+        return true;
+    }
+
+    public function admin_notice_woocommerce_missing() {
+        echo '<div class="notice notice-warning is-dismissible"><p>';
+        echo __('HelloWP! | Woo Membership Coupon Rules requires WooCommerce to be installed and active.', 'your-textdomain');
+        echo '</p></div>';
+    }
+
+    public function admin_notice_minimum_woocommerce_version() {
+        echo '<div class="notice notice-warning is-dismissible"><p>';
+        echo sprintf(__('HelloWP! | Woo Membership Coupon Rules requires at least WooCommerce version %s.', 'your-textdomain'), self::MINIMUM_WOOCOMMERCE_VERSION);
+        echo '</p></div>';
+    }
+
+    public function admin_notice_wc_memberships_missing() {
+        echo '<div class="notice notice-warning is-dismissible"><p>';
+        echo __('HelloWP! | Woo Membership Coupon Rules requires WooCommerce Memberships to be installed and active.', 'your-textdomain');
+        echo '</p></div>';
+    }
+
 }
 
-include_once plugin_dir_path(__FILE__) . 'includes/class-hw-coupon-restriction.php';
-
-
-new My_WooCommerce_Extension();
-
+My_WooCommerce_Extension::instance();
