@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: HelloWP! | Woo Membership Coupon Rules
+ * Plugin Name: Woo Membership Coupon Rules
  * Plugin URI: https://github.com/Lonsdale201/Woo-Membership-Coupon-rulez
  * Description: A simple addition to coupons that allows WooCommerce membership users to optionally force to not use coupons if the membership provides a discount, or not have a selected mmship for the user based on the settings.
  * Version: 2.0
  * Author: Soczó Kristóf
- * Author URI: https://hellowp.io/hu/
+ * Author URI: https://github.com/Lonsdale201?tab=repositories
  */
 
 if (!defined('ABSPATH')) {
